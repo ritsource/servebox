@@ -60,17 +60,45 @@ func FileServer(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func main() {
-	// testCopy()
-	// file := db.File{
-	// 	Title:    "index2.txt",
-	// 	Password: "mypassword2",
-	// }
+func writePassword() {
+	pw := db.Password{
+		Title:    "index3.txt",
+		Password: "mypassword1",
+		FileName: "index3.txt",
+	}
 
-	// err0 := file.RemoveFile()
-	// if err0 != nil {
-	// 	log.Fatal(err0)
-	// }
+	err := pw.Write()
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func readPassword() {
+	pw := db.Password{
+		Title:    "index3.txt",
+		Password: "mypassword1",
+		// FileName: "index3.txt",
+	}
+
+	err := pw.Read()
+	if err == nil {
+		fmt.Printf("%+v\n", pw)
+		return
+	}
+
+	if err.Error() == "wrong:password" {
+		fmt.Printf("Wrong Password!!!")
+		return
+	}
+
+	log.Fatal(err)
+
+}
+
+func main() {
+
+	// writePassword()
+	readPassword()
 
 	fmt.Println(db.BaseLoc)
 	http.HandleFunc("/hello", HelloServer)
@@ -78,10 +106,10 @@ func main() {
 	http.HandleFunc("/download", FileServer)
 
 	// err := http.ListenAndServeTLS(":8080", "server.crt", "server.key", nil)
-	err := http.ListenAndServe(":8080", nil)
-	if err != nil {
-		log.Fatal("ListenAndServe: ", err)
-	}
+	// err := http.ListenAndServe(":8080", nil)
+	// if err != nil {
+	// 	log.Fatal("ListenAndServe: ", err)
+	// }
 }
 
 func testCopy() {
