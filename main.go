@@ -62,15 +62,15 @@ func FileServer(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	// testCopy()
-	file := db.File{
-		Title:    "index2.txt",
-		Password: "mypassword2",
-	}
+	// file := db.File{
+	// 	Title:    "index2.txt",
+	// 	Password: "mypassword2",
+	// }
 
-	err0 := file.RemoveFile()
-	if err0 != nil {
-		log.Fatal(err0)
-	}
+	// err0 := file.RemoveFile()
+	// if err0 != nil {
+	// 	log.Fatal(err0)
+	// }
 
 	fmt.Println(db.BaseLoc)
 	http.HandleFunc("/hello", HelloServer)
