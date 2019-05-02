@@ -69,17 +69,6 @@ func WriteFile(fp string, src string) (string, error) {
 	return "", errors.New("dup:err")
 }
 
-// HandlePassDir creates File.Password directory if does not exist
-func HandlePassDir(pwPath string) error {
-	// pwp, err := IsExist(pwPath) // Password path (pwp), check if exist
-	err := os.MkdirAll(pwPath, os.ModePerm)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 // File type represents each file in database
 type File struct {
 	Title    string // Location can only be saved in password
@@ -93,21 +82,27 @@ type File struct {
 
 // GetFile serves the file if authenticated, returns http.FileSystem type
 func (f File) GetFile() (string, error) {
-	// Filepath, file's location
-	fp := path.Join(FileLoc, f.Password, f.Title)
+	pw := Password{Title: f.Title, Password: f.Password} // Password Struct
+	err := pw.Read()                                     // Reading FileName from Password
 
-	// HandlePassDir takes care of password directory, creates if does not exist
-	HandlePassDir(path.Join(FileLoc, f.Password))
-	return IsExist(fp)
+	// If No Error
+	if err == nil {
+		return IsExist(path.Join(FileLoc, pw.FileName))
+	}
+
+	// if err.Error() == "wrong:password" {
+	// 	return "", err
+	// } // I can just comment it ou, as eventually it returns the same Error
+	return "", err
 }
 
 // CopyFile copies a file from main source to servebox directory
 func (f File) CopyFile(src string) (string, error) {
 	// Filepath, file's location
-	fp := path.Join(FileLoc, f.Password, f.Title)
+	fp := path.Join(FileLoc, f.Title)
 
-	HandlePassDir(path.Join(FileLoc, f.Password)) // To handle PasswordDir
-	return WriteFile(fp, src)                     // WriteFile writes teh file, and handle errors (To dry up the code)
+	// WriteFile writes teh file, and handle errors (To dry up the code)
+	return WriteFile(fp, src)
 }
 
 // CopyFileDup copies file data by recursively
@@ -116,9 +111,7 @@ func (f File) CopyFileDup(src string) (string, error) {
 	nf := File(f)                    // First create a new File type
 	nf.Title = genDupTitle(nf.Title) // Rename that Title &#!T
 
-	fp := path.Join(FileLoc, nf.Password, nf.Title) // New Path that includes ".copy"
-
-	HandlePassDir(path.Join(FileLoc, f.Password)) // To handle PasswordDir
+	fp := path.Join(FileLoc, nf.Title) // New Path that includes ".copy"
 
 	np, err := WriteFile(fp, src) // Writes file
 	if err == nil {
@@ -147,7 +140,7 @@ func (f File) CopyFileRename(src string, nTit string) (string, error) {
 	nf := File(f)   // First create a new File type
 	nf.Title = nTit // Rename that Title &#!T, this time also
 
-	fp := path.Join(FileLoc, nf.Password, nf.Title) // New Path
+	fp := path.Join(FileLoc, nf.Title) // New Path
 
 	np, err := WriteFile(fp, src) // Writes file
 	if err == nil {
@@ -168,7 +161,7 @@ func (f File) CopyFileRename(src string, nTit string) (string, error) {
 // RemoveFile deletes a file
 func (f File) RemoveFile() error {
 	// filepath
-	fp := path.Join(FileLoc, f.Password, f.Title)
+	fp := path.Join(FileLoc, f.Title)
 
 	// Removing file
 	err := os.Remove(fp)

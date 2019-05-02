@@ -98,18 +98,20 @@ func readPassword() {
 func main() {
 
 	// writePassword()
-	readPassword()
+	// readPassword()
 
-	fmt.Println(db.BaseLoc)
+	testCopy()
+
+	// fmt.Println(db.BaseLoc)
 	http.HandleFunc("/hello", HelloServer)
 	http.HandleFunc("/read", FileServer)
 	http.HandleFunc("/download", FileServer)
 
 	// err := http.ListenAndServeTLS(":8080", "server.crt", "server.key", nil)
-	// err := http.ListenAndServe(":8080", nil)
-	// if err != nil {
-	// 	log.Fatal("ListenAndServe: ", err)
-	// }
+	err := http.ListenAndServe(":8080", nil)
+	if err != nil {
+		log.Fatal("ListenAndServe: ", err)
+	}
 }
 
 func testCopy() {
@@ -127,9 +129,9 @@ func testCopy() {
 	}
 
 	if err.Error() == "dup:err" {
-		np, err = file.CopyFileRename(src, "newfile.txt")
-		// np, err = file.CopyFileDup(src)
-		// return
+		// np, err = file.CopyFileRename(src, "newfile.txt")
+		np, err = file.CopyFileDup(src)
+		return
 	}
 
 	if err != nil {

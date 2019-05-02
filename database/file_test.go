@@ -67,7 +67,12 @@ func PopSrc() {
 	}
 }
 
-func TestCopyFile(t *testing.T) {
+// TODO:
+// func TestGetFile() {
+
+// }
+
+func TestCopyAndRemove(t *testing.T) {
 	src := path.Join(SourceDir, "test_doc.txt") // Source File Path
 
 	// File Struct, containing Title and password
@@ -89,14 +94,14 @@ func TestCopyFile(t *testing.T) {
 		"new_doc.txt":       "test_doc",
 	}
 
-	checkCreatedFiles(t, "mypassword1", fcmap) // Checking File Content
+	checkCreatedFiles(t, fcmap) // Checking File Content
 
 	// Testing File Deletion
 	f2bDeleted := db.File{Title: "test_doc.copy.copy.txt", Password: "mypassword1"} // File to be deleted
 	removeFile(t, f2bDeleted)                                                       // Deleting f2bDeleted ("test_doc.copy.copy.txt")
 
 	// Check if deleted or not
-	_, err := ioutil.ReadFile(path.Join(db.FileLoc, f2bDeleted.Password, f2bDeleted.Title))
+	_, err := ioutil.ReadFile(path.Join(db.FileLoc, f2bDeleted.Title))
 	if err == nil {
 		t.Error("Error:", "Unable to Delete file")
 	}
@@ -130,16 +135,16 @@ func removeFile(t *testing.T, file db.File) {
 	}
 }
 
-func checkCreatedFiles(t *testing.T, password string, fcmap map[string]string) {
+func checkCreatedFiles(t *testing.T, fcmap map[string]string) {
 	for k, v := range fcmap {
 		// filesl
-		b, err := ioutil.ReadFile(path.Join(db.FileLoc, password, k))
+		b, err := ioutil.ReadFile(path.Join(db.FileLoc, k))
 		if err != nil {
 			t.Error("Error:", err)
 		}
 
 		if string(b) != v {
-			t.Error("Error:", errors.New("Content Mismatch, "+path.Join(db.FileLoc, password, k)))
+			t.Error("Error:", errors.New("Content Mismatch, "+path.Join(db.FileLoc, k)))
 		}
 	}
 }
