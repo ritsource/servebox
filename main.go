@@ -28,16 +28,27 @@ func HelloServer(w http.ResponseWriter, r *http.Request) {
 
 // FileServer ...
 func FileServer(w http.ResponseWriter, r *http.Request) {
+	pp := r.URL.Query().Get("passphrase")
+	fmt.Println("passphrase", pp)
+
 	f := db.File{
 		Location: "index2.txt",
-		Password: "xyz",
+		Password: pp,
 	}
 
-	p := f.GetFile()
+	p, err := f.GetFile()
+	if err != nil {
+		fmt.Fprintf(w, "%s", err)
+		return
+	} else if p == "" {
+		fmt.Fprintf(w, "%s", "Wrong Passphrase!")
+		return
+	}
 
 	data, err := ioutil.ReadFile(p)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println("Error", err)
+		return
 	}
 
 	buf := bytes.NewBuffer(data)
