@@ -1,6 +1,7 @@
 package database
 
 import (
+	"errors"
 	"io"
 	"os"
 	"path"
@@ -9,7 +10,7 @@ import (
 
 // File type represents each file in database
 type File struct {
-	Location string // Location can only be saved in password
+	Title    string // Location can only be saved in password
 	FileType string
 	isPublic bool
 	Password string
@@ -52,18 +53,9 @@ func CopyData(src string, dst string) error {
 	return out.Close()
 }
 
-// GetFile serves the file if authenticated, returns http.FileSystem type
-func (f File) GetFile() (string, error) {
-	// Filepath, file's location
-	fp := path.Join(FileLoc, f.Password, f.Location)
-	return IsExist(fp)
-}
-
-// CopyFile copies a file from main source to servebox directory
-func (f File) CopyFile(src string) (string, error) {
-	// Filepath, file's location
-	fp := path.Join(FileLoc, f.Password, f.Location)
-
+// WriteFile ...
+func WriteFile(fp string, src string) (string, error) {
+	// Check if fp (filepath) exists or not
 	np, err := IsExist(fp)
 	if err != nil {
 		return "", err
@@ -78,13 +70,67 @@ func (f File) CopyFile(src string) (string, error) {
 		return fp, nil
 	}
 
-	// If a file already a file exist
-	// recursively try with new name by adding "-copy"
+	// If a file already a file exist then return a "dup:err" error
+	return "", errors.New("dup:err")
+}
 
-	nf := File(f)                          // First create a new File type
-	nf.Location = genDupTitle(nf.Location) // Rename that &#!T
+// GetFile serves the file if authenticated, returns http.FileSystem type
+func (f File) GetFile() (string, error) {
+	// Filepath, file's location
+	fp := path.Join(FileLoc, f.Password, f.Title)
+	return IsExist(fp)
+}
 
-	return nf.CopyFile(src) // Recursively run the function
+// CopyFile copies a file from main source to servebox directory
+func (f File) CopyFile(src string) (string, error) {
+	// Filepath, file's location
+	fp := path.Join(FileLoc, f.Password, f.Title)
+	return WriteFile(fp, src) // WriteFile writes teh file, and handle errors (To dry up the code)
+}
+
+// CopyFileDup copies file data by recursively
+// adding ".copy" to the title if filepath exist
+func (f File) CopyFileDup(src string) (string, error) {
+	nf := File(f)                    // First create a new File type
+	nf.Title = genDupTitle(nf.Title) // Rename that Title &#!T
+
+	fp := path.Join(FileLoc, nf.Password, nf.Title) // New Path that includes ".copy"
+
+	np, err := WriteFile(fp, src) // Writes file
+	if err == nil {
+		return np, nil // If no error then return expected returns
+	}
+
+	// If error refers that, this filename exists too, try again & again & again
+	if err.Error() == "dup:err" {
+		return nf.CopyFileDup(src) // Recursively run the function
+	}
+
+	// If some other error
+	return "", err
+}
+
+// CopyFileRename copies teh file data with new name
+func (f File) CopyFileRename(src string, nTit string) (string, error) {
+	nf := File(f)   // First create a new File type
+	nf.Title = nTit // Rename that Title &#!T, this time also
+
+	fp := path.Join(FileLoc, nf.Password, nf.Title) // New Path
+
+	np, err := WriteFile(fp, src) // Writes file
+	if err == nil {
+		return np, nil // If no error then return expected returns
+	}
+
+	// If error refers that, a file of that name already a file exist then return a "dup:err" error
+	if err.Error() == "dup:err" {
+		// return "", errors.New("dup:err")
+		return "", err
+	}
+
+	return "", err // If some other error
+
+	// NOTE: I could have just returned the error, but this is less confiusing and easy to understand
 }
 
 // Generates new filename that includes ".copy" before the extension,

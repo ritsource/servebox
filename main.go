@@ -32,7 +32,7 @@ func FileServer(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("passphrase", pp)
 
 	f := db.File{
-		Location: "index2.txt",
+		Title:    "index2.txt",
 		Password: pp,
 	}
 
@@ -76,17 +76,27 @@ func main() {
 }
 
 func testCopy() {
-	s := "/home/ritwik310/Downloads/test_doc.txt"
+	src := "/home/ritwik310/Downloads/test_doc.txt"
 
 	file := db.File{
-		Location: "index3.txt",
+		Title:    "index3.txt",
 		Password: "mypassword1",
 	}
 
-	np, err := file.CopyFile(s)
+	np, err := file.CopyFile(src)
+	if err == nil {
+		fmt.Println("np", np)
+		return
+	}
+
+	if err.Error() == "dup:err" {
+		np, err = file.CopyFileRename(src, "newfile.txt")
+		// np, err = file.CopyFileDup(src)
+		// return
+	}
+
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Println("np", np)
 }
