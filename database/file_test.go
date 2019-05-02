@@ -85,13 +85,13 @@ func TestCopyAndRemove(t *testing.T) {
 	copyFile(t, file, src)    // Copy file
 	copyFileDup(t, file, src) // Copy same file again
 	copyFileDup(t, file, src) // Copy again, but this will be deleted
-	copyFileRename(t, file, src, "new_doc.txt")
+	copyFileRename(t, file, src, "test_doc.new.txt")
 
 	// File Content Map, NOTE: "test_doc.copy.copy.txt" has been Deleted
 	fcmap := map[string]string{
 		"test_doc.txt":      "test_doc",
 		"test_doc.copy.txt": "test_doc",
-		"new_doc.txt":       "test_doc",
+		"test_doc.new.txt":  "test_doc",
 	}
 
 	checkCreatedFiles(t, fcmap) // Checking File Content
