@@ -98,3 +98,17 @@ func (f File) CopyFileRename(src string, nTit string) (string, error) {
 
 	// NOTE: I could have just returned the error, but this is less confiusing and easy to understand
 }
+
+// RemoveFile deletes a file
+func (f File) RemoveFile() error {
+	// filepath
+	fp := path.Join(FileLoc, f.Password, f.Title)
+
+	// Removing file
+	err := os.Remove(fp)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

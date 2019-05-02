@@ -77,18 +77,29 @@ func TestCopyFile(t *testing.T) {
 	}
 
 	// NOTE: Always run copyFile before copyFileDup
-	copyFile(t, file, src)
-	copyFileDup(t, file, src)
+	copyFile(t, file, src)    // Copy file
+	copyFileDup(t, file, src) // Copy same file again
+	copyFileDup(t, file, src) // Copy again, but this will be deleted
 	copyFileRename(t, file, src, "new_doc.txt")
 
-	// File Content Map
+	// File Content Map, NOTE: "test_doc.copy.copy.txt" has been Deleted
 	fcmap := map[string]string{
 		"test_doc.txt":      "test_doc",
 		"test_doc.copy.txt": "test_doc",
 		"new_doc.txt":       "test_doc",
 	}
 
-	checkCreatedFiles(t, "mypassword1", fcmap)
+	checkCreatedFiles(t, "mypassword1", fcmap) // Checking File Content
+
+	// Testing File Deletion
+	f2bDeleted := db.File{Title: "test_doc.copy.copy.txt", Password: "mypassword1"} // File to be deleted
+	removeFile(t, f2bDeleted)                                                       // Deleting f2bDeleted ("test_doc.copy.copy.txt")
+
+	// Check if deleted or not
+	_, err := ioutil.ReadFile(path.Join(db.FileLoc, f2bDeleted.Password, f2bDeleted.Title))
+	if err == nil {
+		t.Error("Error:", "Unable to Delete file")
+	}
 }
 
 func copyFile(t *testing.T, file db.File, src string) {
@@ -108,6 +119,13 @@ func copyFileDup(t *testing.T, file db.File, src string) {
 func copyFileRename(t *testing.T, file db.File, src string, newname string) {
 	_, err := file.CopyFileRename(src, newname)
 	if err != nil && err.Error() != "dup:err" {
+		t.Error("Error:", err)
+	}
+}
+
+func removeFile(t *testing.T, file db.File) {
+	err := file.RemoveFile()
+	if err != nil {
 		t.Error("Error:", err)
 	}
 }
