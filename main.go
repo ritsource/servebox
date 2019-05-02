@@ -61,13 +61,32 @@ func FileServer(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	testCopy()
+
 	fmt.Println(db.BaseLoc)
 	http.HandleFunc("/hello", HelloServer)
-	http.HandleFunc("/", FileServer)
+	http.HandleFunc("/read", FileServer)
+	http.HandleFunc("/download", FileServer)
 
 	// err := http.ListenAndServeTLS(":8080", "server.crt", "server.key", nil)
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
+}
+
+func testCopy() {
+	s := "/home/ritwik310/Downloads/test_doc.txt"
+
+	file := db.File{
+		Location: "index3.txt",
+		Password: "mypassword1",
+	}
+
+	np, err := file.CopyFile(s)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("np", np)
 }
