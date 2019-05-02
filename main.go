@@ -1,24 +1,61 @@
 package main
 
 import (
-	// "fmt"
-	// "io"
+	"bytes"
+	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
+
+	db "github.com/ritwik310/servebox/database"
 )
 
+func init() {
+	// Creates required directories, doesn't delete if already exist
+	err := os.MkdirAll(db.FileLoc, os.ModePerm)
+	err = os.MkdirAll(db.PassLoc, os.ModePerm)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
 // HelloServer ...
-func HelloServer(w http.ResponseWriter, req *http.Request) {
+func HelloServer(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
 	w.Write([]byte("This is an example server.\n"))
-	// fmt.Fprintf(w, "This is an example server.\n")
-	// io.WriteString(w, "This is an example server.\n")
+}
+
+// FileServer ...
+func FileServer(w http.ResponseWriter, r *http.Request) {
+	f := db.File{
+		Location: "index2.txt",
+		Password: "xyz",
+	}
+
+	p := f.GetFile()
+
+	data, err := ioutil.ReadFile(p)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	buf := bytes.NewBuffer(data)
+
+	// w.Header().Set("Content-type", "application/octet-stream")
+
+	if _, err := buf.WriteTo(w); err != nil {
+		fmt.Fprintf(w, "%s", err)
+	}
 }
 
 func main() {
+	fmt.Println(db.BaseLoc)
 	http.HandleFunc("/hello", HelloServer)
+	http.HandleFunc("/", FileServer)
 
-	err := http.ListenAndServeTLS(":8080", "server.crt", "server.key", nil)
+	// err := http.ListenAndServeTLS(":8080", "server.crt", "server.key", nil)
+	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
