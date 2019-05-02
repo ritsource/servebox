@@ -1,6 +1,7 @@
 package database
 
 import (
+	"flag"
 	"log"
 	"os/user"
 	"path"
@@ -21,7 +22,13 @@ func init() {
 		log.Fatal(err)
 	}
 
-	BaseLoc = path.Join(usr.HomeDir, "servebox")
+	// Check if testing env or oot
+	if flag.Lookup("test.v") == nil {
+		BaseLoc = path.Join(usr.HomeDir, "servebox") // Default Base Directory
+	} else {
+		BaseLoc = path.Join("..", "test_servebox") // Base Directory in Testing Environment
+	}
+
 	FileLoc = path.Join(BaseLoc, "files")
 	PassLoc = path.Join(BaseLoc, "passwords")
 }

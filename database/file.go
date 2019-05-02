@@ -1,8 +1,6 @@
 package database
 
 import (
-	"errors"
-	"io"
 	"os"
 	"path"
 	"strings"
@@ -16,68 +14,24 @@ type File struct {
 	Password string
 }
 
-// IsExist checks if Filepath (fp) exist or not
-// Returns path, if exist else returns "", returns "", err on error
-func IsExist(fp string) (string, error) {
-	if _, err := os.Stat(fp); err == nil {
-		return fp, nil // File exists
-	} else if os.IsNotExist(err) {
-		return "", nil // File does not exists
-	} else {
-		return "", err
-	}
-}
-
-// CopyData creates a destination file
-// and copies data from a source file to the destination
-func CopyData(src string, dst string) error {
-	// Reading from Source file
-	in, err := os.Open(src)
+// HandlePassDir creates File.Password directory if does not exist
+func HandlePassDir(pwPath string) error {
+	// pwp, err := IsExist(pwPath) // Password path (pwp), check if exist
+	err := os.MkdirAll(pwPath, os.ModePerm)
 	if err != nil {
 		return err
 	}
-	defer in.Close()
 
-	// Creating new file
-	out, err := os.Create(dst)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
-	// Copying Data from Source to Destination
-	_, err = io.Copy(out, in)
-	if err != nil {
-		return err
-	}
-	return out.Close()
-}
-
-// WriteFile ...
-func WriteFile(fp string, src string) (string, error) {
-	// Check if fp (filepath) exists or not
-	np, err := IsExist(fp)
-	if err != nil {
-		return "", err
-	}
-
-	// If path does not exist
-	if np == "" {
-		err = CopyData(src, fp)
-		if err != nil {
-			return "", err
-		}
-		return fp, nil
-	}
-
-	// If a file already a file exist then return a "dup:err" error
-	return "", errors.New("dup:err")
+	return nil
 }
 
 // GetFile serves the file if authenticated, returns http.FileSystem type
 func (f File) GetFile() (string, error) {
 	// Filepath, file's location
 	fp := path.Join(FileLoc, f.Password, f.Title)
+
+	// HandlePassDir takes care of password directory, creates if does not exist
+	HandlePassDir(path.Join(FileLoc, f.Password))
 	return IsExist(fp)
 }
 
@@ -85,7 +39,9 @@ func (f File) GetFile() (string, error) {
 func (f File) CopyFile(src string) (string, error) {
 	// Filepath, file's location
 	fp := path.Join(FileLoc, f.Password, f.Title)
-	return WriteFile(fp, src) // WriteFile writes teh file, and handle errors (To dry up the code)
+
+	HandlePassDir(path.Join(FileLoc, f.Password)) // To handle PasswordDir
+	return WriteFile(fp, src)                     // WriteFile writes teh file, and handle errors (To dry up the code)
 }
 
 // CopyFileDup copies file data by recursively
@@ -95,6 +51,8 @@ func (f File) CopyFileDup(src string) (string, error) {
 	nf.Title = genDupTitle(nf.Title) // Rename that Title &#!T
 
 	fp := path.Join(FileLoc, nf.Password, nf.Title) // New Path that includes ".copy"
+
+	HandlePassDir(path.Join(FileLoc, f.Password)) // To handle PasswordDir
 
 	np, err := WriteFile(fp, src) // Writes file
 	if err == nil {
@@ -108,6 +66,14 @@ func (f File) CopyFileDup(src string) (string, error) {
 
 	// If some other error
 	return "", err
+}
+
+// Generates new filename that includes ".copy" before the extension,
+// can be used to handle duplicate file
+func genDupTitle(oldstr string) string {
+	oldsl := strings.Split(oldstr, ".")
+	newsl := append(oldsl[0:len(oldsl)-1], "copy", oldsl[len(oldsl)-1])
+	return strings.Join(newsl, ".")
 }
 
 // CopyFileRename copies teh file data with new name
@@ -131,12 +97,4 @@ func (f File) CopyFileRename(src string, nTit string) (string, error) {
 	return "", err // If some other error
 
 	// NOTE: I could have just returned the error, but this is less confiusing and easy to understand
-}
-
-// Generates new filename that includes ".copy" before the extension,
-// can be used to handle duplicate file
-func genDupTitle(oldstr string) string {
-	oldsl := strings.Split(oldstr, ".")
-	newsl := append(oldsl[0:len(oldsl)-1], "copy", oldsl[len(oldsl)-1])
-	return strings.Join(newsl, ".")
 }

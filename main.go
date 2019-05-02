@@ -80,7 +80,7 @@ func testCopy() {
 
 	file := db.File{
 		Title:    "index3.txt",
-		Password: "mypassword1",
+		Password: "mypassword2",
 	}
 
 	np, err := file.CopyFile(src)
