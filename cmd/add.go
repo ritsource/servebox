@@ -18,25 +18,37 @@ var addCmd = &cobra.Command{
 	Short: "A",
 	Long:  `A`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		var src string
-		var password string
-		var filename string
-		var newpath string // (np)
+		var replace bool    // File to be replaced or not (If already there)
+		var src string      // Path to the source file
+		var password string // Password input
+		var filename string // Filename (File's Title)
+		var newpath string  // Path of the copied file (np)
 		var err error
 
+		// Reading Flags
+		replace, err = cmd.Flags().GetBool("replace") // Reading "replace" flag
+		if err != nil {
+			return err
+		}
+
+		fmt.Println("Replace", replace)
+
+		// Check if any arguement provided in the command
 		if len(args) > 0 {
-			src, err = checkSrc(args[0])
+			// If src arguement passed
+			src, err = checkSrc(args[0]) // Checks for a valid file source
 			if err != nil {
-				// fmt.Printf("\n")
 				return err
 			}
 		} else {
-			srcIn, err := askInput("Source Path: ") // Source Input
+			// If no source arguement passed
+			srcIn, err := askInput("Source Path: ") // Getting source path from the user
 			if err != nil {
 				fmt.Printf("\n")
 				return err
 			}
 
+			// Validate source
 			src, err = checkSrc(srcIn[:len(srcIn)-1]) // NOTE: srcIn includes "\n" in the end
 			if err != nil {
 				fmt.Printf("\n")
@@ -44,96 +56,128 @@ var addCmd = &cobra.Command{
 			}
 		}
 
-		password, err = handlePasswordIn("Enter Password: ")
+		// Getting password from the user
+		password, err = handlePasswordIn("Enter Password: ") // handlePasswordIn handles password input & validation
 		if err != nil {
 			return err
 		}
 
+		// Extracting filename from the source
 		_, srcFn := path.Split(src) // Reading the filename from src
 		filename = srcFn            // Setting filename to srcFn
 
-		file := db.File{Title: filename, Password: password} // New File Struct
+		// New File struct
+		file := db.File{Title: filename, Password: password}
 
-		// fmt.Printf("%+v\n", f)
-
+		// Copying source file
 		newpath, err = file.CopyFile(src)
 
-		if err != nil && err.Error() == "dup:err" { // TODO: Replace the file option
-
-			newpath, err = handleDuplicate(true, src, &filename, &newpath, &file)
-			if err != nil {
-				return err
+		if err != nil && err.Error() == "dup:err" {
+			// If filename already exist
+			if replace {
+				// if user requested for existing file replacement (-r)
+				err = handleReplace(src, &newpath, file) // handleReplace handles file replacing
+				if err != nil {
+					return err
+				}
+			} else {
+				// If user doesn't wanna replace the previous one, create duplicate
+				err = handleDuplicate(true, src, &filename, &newpath, &file) // handleDuplicate handles renaming
+				if err != nil {
+					return err
+				}
 			}
-
 		} else if err != nil {
+			// If other error
 			return err
 		}
 
-		_, npFile := path.Split(newpath)
+		// Saving Password
+		_, npFile := path.Split(newpath)                                       // Getting new filename
+		pw := db.Password{Title: npFile, Password: password, FileName: npFile} // New Password struct
 
-		pw := db.Password{Title: npFile, Password: password, FileName: npFile}
-
-		// fmt.Printf("%+v\n", pw)
-
+		// Writing Password
 		err = pw.Write()
 		if err != nil {
 			return err
 		}
 
-		fmt.Println("newpath:", newpath)
+		// Printing teh results
 		fmt.Print("\n")
-		fmt.Println("Source Location:\t", newpath)
-		fmt.Println("Copy Location:\t", newpath)
-
-		fmt.Println("add called")
+		fmt.Println("Source Location:", src)
+		fmt.Println("Copy Location:", newpath)
 
 		return nil
 	},
 }
 
+// handlePasswordIn handles password input and validation (!= "")
 func handlePasswordIn(label string) (string, error) {
-	pwIn, err := askInput(label) // Password for File
+	pwIn, err := askInput(label) // Getting input
 	if err != nil {
 		fmt.Printf("\n")
 		return "", err
 	}
 
-	passw := pwIn[:len(pwIn)-1]
+	passw := pwIn[:len(pwIn)-1] // excluding "\n" from the end
 
 	if passw == "" {
+		// If input == "", ask again
 		return handlePasswordIn("Enter Password (Non-Optional): ")
 	}
 
 	return passw, nil
 }
 
-func handleDuplicate(askforauto bool, src string, filename *string, newpath *string, file *db.File) (string, error) {
+// handleReplace deletes the old file, and replaces it with the new file data
+func handleReplace(src string, newpath *string, file db.File) error {
+	// NOTE: handleReplace will remove file, but don't have to be worrid about password file deletion
+	// cause while writing the password file later in the CMD-function we are gonnarewrite it anyway
+
+	err := file.RemoveFile() // Remove the existing file
+	if err != nil {
+		return err
+	}
+
+	*newpath, err = file.CopyFile(src) // Copy the new Data
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// handleDuplicate takes care of file renaming on duplicate copy
+func handleDuplicate(askforauto bool, src string, filename *string, newpath *string, file *db.File) error {
 	fmt.Printf("++ CONFLICT ++: filename \"" + *filename + "\" already exist.\n")
 
-	var autoRn string
+	var autoRn string // Want-Auto-Rename input
 	var err error
 
+	// Only want to ask for auto rename, indeally for the first time only
 	if askforauto {
 		rnIn, err := askInput("Rename or Auto-Rename (r/A): ")
 		if err != nil {
 			fmt.Printf("\n")
-			return "", err
+			return err
 		}
 
 		autoRn = rnIn[:len(rnIn)-1]
 	}
 
 	if askforauto && strings.ToLower(autoRn) != "r" {
+		// When user askes for auto renaming
 		*newpath, err = file.CopyFileDup(src)
 		if err != nil {
-			return "", err
+			return err
 		}
-	} else {
 
+	} else {
+		// If user selects manual renaming
 		fnIn, err := askInput("Enter Filename: ") // Password for File
 		if err != nil {
 			fmt.Printf("\n")
-			return "", err
+			return err
 		}
 
 		*filename = fnIn[:len(fnIn)-1]
@@ -141,24 +185,26 @@ func handleDuplicate(askforauto bool, src string, filename *string, newpath *str
 		*newpath, err = file.CopyFileRename(src, *filename)
 
 		if err != nil && err.Error() == "dup:err" {
-			// askforauto = false
+			// If manual name is also duplicate, run again (this time dont askforauto)
 			return handleDuplicate(false, src, filename, newpath, file)
 		} else if err != nil {
 			fmt.Printf("\n")
-			return "", err
+			return err
 		}
 
 	}
 
-	return *newpath, nil
+	return nil
 }
 
+// askInput reads user input
 func askInput(label string) (string, error) {
 	reader := bufio.NewReader(os.Stdin) // New Reader
 	fmt.Print(label)
 	return reader.ReadString('\n') // Reading string until '\n'
 }
 
+// checkSrc checks if a file is valid or not, given its path
 func checkSrc(input string) (string, error) {
 	info, err := os.Stat(input)
 
@@ -180,15 +226,7 @@ func checkSrc(input string) (string, error) {
 }
 
 func init() {
+	addCmd.Flags().BoolP("replace", "r", false, "Replace with the new copy if file is already there") // FLags
+
 	rootCmd.AddCommand(addCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// addCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// addCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
