@@ -1,14 +1,13 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
-	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
+	"path"
 
 	db "github.com/ritwik310/servebox/database"
+	"github.com/ritwik310/servebox/server"
 )
 
 func init() {
@@ -20,53 +19,52 @@ func init() {
 	}
 }
 
-// HelloServer ...
-func HelloServer(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/plain")
-	w.Write([]byte("This is an example server.\n"))
-}
-
-// FileServer ...
-func FileServer(w http.ResponseWriter, r *http.Request) {
-	pp := r.URL.Query().Get("passphrase")
-	fmt.Println("passphrase", pp)
-
+func main() {
 	f := db.File{
-		Title:    "index2.txt",
-		Password: pp,
+		Title:    "myfile.txt",
+		Password: "mypassword0",
 	}
 
-	p, err := f.GetFile()
+	src := "/home/ritwik310/Downloads/test_doc.txt"
+
+	np, err := testCopy(f, src)
 	if err != nil {
-		fmt.Fprintf(w, "%s", err)
-		return
-	} else if p == "" {
-		fmt.Fprintf(w, "%s", "Wrong Passphrase!")
-		return
+		log.Fatal(err)
 	}
 
-	data, err := ioutil.ReadFile(p)
-	if err != nil {
-		fmt.Println("Error", err)
-		return
+	fmt.Println("New Path:", np)
+
+	npDir, npFile := path.Split(np)
+	fmt.Println("npDir", npDir)
+	fmt.Println("npFile", npFile)
+
+	pw := db.Password{
+		// Title:    "myfile.txt",
+		Title:    npFile,
+		Password: "mypassword0",
+		FileName: npFile,
 	}
 
-	buf := bytes.NewBuffer(data)
+	writePassword(pw)
 
-	// w.Header().Set("Content-type", "application/octet-stream")
-
-	if _, err := buf.WriteTo(w); err != nil {
-		fmt.Fprintf(w, "%s", err)
-	}
+	server.Start()
 }
 
-func writePassword() {
-	pw := db.Password{
-		Title:    "index3.txt",
-		Password: "mypassword1",
-		FileName: "index3.txt",
+func testCopy(file db.File, src string) (string, error) {
+	np, err := file.CopyFile(src)
+	if err == nil {
+		return np, err
 	}
 
+	if err.Error() == "dup:err" {
+		// np, err = file.CopyFileRename(src, "newfile.txt")
+		return file.CopyFileDup(src)
+	}
+
+	return "", err
+}
+
+func writePassword(pw db.Password) {
 	err := pw.Write()
 	if err != nil {
 		log.Fatal(err)
@@ -92,50 +90,5 @@ func readPassword() {
 	}
 
 	log.Fatal(err)
-
-}
-
-func main() {
-
-	// writePassword()
-	// readPassword()
-
-	testCopy()
-
-	// fmt.Println(db.BaseLoc)
-	http.HandleFunc("/hello", HelloServer)
-	http.HandleFunc("/read", FileServer)
-	http.HandleFunc("/download", FileServer)
-
-	// err := http.ListenAndServeTLS(":8080", "server.crt", "server.key", nil)
-	err := http.ListenAndServe(":8080", nil)
-	if err != nil {
-		log.Fatal("ListenAndServe: ", err)
-	}
-}
-
-func testCopy() {
-	src := "/home/ritwik310/Downloads/test_doc.txt"
-
-	file := db.File{
-		Title:    "index3.txt",
-		Password: "mypassword2",
-	}
-
-	np, err := file.CopyFile(src)
-	if err == nil {
-		fmt.Println("np", np)
-		return
-	}
-
-	if err.Error() == "dup:err" {
-		// np, err = file.CopyFileRename(src, "newfile.txt")
-		np, err = file.CopyFileDup(src)
-		return
-	}
-
-	if err != nil {
-		log.Fatal(err)
-	}
 
 }
