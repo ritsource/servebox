@@ -67,25 +67,51 @@ func PopSrc() {
 	}
 }
 
-// TODO:
-// func TestGetFile() {
+func TestGetFile(t *testing.T) {
+	filename := "get_test_doc.txt"              // Name of file (Title)
+	password := "mypassword1"                   // Password for File
+	src := path.Join(SourceDir, "test_doc.txt") // Source File Path
 
-// }
+	f := db.File{Title: filename} // File Struct, containing Title and password
+
+	// Copying File from source
+	np, _ := copyFile(t, f, src) // copyFile function takes care of error
+
+	_, npFile := path.Split(np)                                            // Geting directory-name and file-name from np (new filepath)
+	pw := db.Password{Title: npFile, Password: password, FileName: npFile} // New Password Struct
+
+	// Writing the Password
+	err := pw.Write()
+	if err != nil {
+		t.Error(err)
+	}
+
+	qFile := db.File{Title: filename, Password: password} // File Struct for Query
+
+	fp, err := qFile.GetFile() // Reading file, using GetFile
+	if err != nil {
+		t.Error(err)
+	}
+
+	if fp != path.Join(db.FileLoc, filename) {
+		t.Error(errors.New("Query from GetFile, doesn't match the expected path: " + fp + " != " + path.Join(db.FileLoc, filename)))
+	}
+}
 
 func TestCopyAndRemove(t *testing.T) {
 	src := path.Join(SourceDir, "test_doc.txt") // Source File Path
 
 	// File Struct, containing Title and password
-	file := db.File{
+	f := db.File{
 		Title:    "test_doc.txt",
 		Password: "mypassword1",
 	}
 
 	// NOTE: Always run copyFile before copyFileDup
-	copyFile(t, file, src)    // Copy file
-	copyFileDup(t, file, src) // Copy same file again
-	copyFileDup(t, file, src) // Copy again, but this will be deleted
-	copyFileRename(t, file, src, "test_doc.new.txt")
+	copyFile(t, f, src)    // Copy file
+	copyFileDup(t, f, src) // Copy same file again
+	copyFileDup(t, f, src) // Copy again, but this will be deleted
+	copyFileRename(t, f, src, "test_doc.new.txt")
 
 	// File Content Map, NOTE: "test_doc.copy.copy.txt" has been Deleted
 	fcmap := map[string]string{
@@ -107,11 +133,13 @@ func TestCopyAndRemove(t *testing.T) {
 	}
 }
 
-func copyFile(t *testing.T, file db.File, src string) {
-	_, err := file.CopyFile(src)
+func copyFile(t *testing.T, file db.File, src string) (string, error) {
+	np, err := file.CopyFile(src)
 	if err != nil && err.Error() != "dup:err" {
 		t.Error("Error:", err)
 	}
+
+	return np, nil
 }
 
 func copyFileDup(t *testing.T, file db.File, src string) {
