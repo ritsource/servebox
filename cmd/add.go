@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 
 	db "github.com/ritwik310/servebox/database"
@@ -19,6 +19,7 @@ var addCmd = &cobra.Command{
 	Long:  `A`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		var replace bool    // File to be replaced or not (If already there)
+		var arg0 string     // First arguement, path to the source file
 		var src string      // Path to the source file
 		var password string // Password input
 		var filename string // Filename (File's Title)
@@ -31,29 +32,33 @@ var addCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Println("Replace", replace)
-
-		// Check if any arguement provided in the command
-		if len(args) > 0 {
-			// If src arguement passed
-			src, err = checkSrc(args[0]) // Checks for a valid file source
+		if len(args) == 0 {
+			// if arguement not provided, ask in prompt
+			arg0In, err := askInput("Source Path: ") // Getting source path from the user
 			if err != nil {
+				fmt.Printf("\n")
+				return err
+			}
+
+			// Checks for a valid file source
+			arg0, err = checkSrc(arg0In[:len(arg0In)-1]) // NOTE: srcIn includes "\n" in the end
+			if err != nil {
+				fmt.Print("\n")
 				return err
 			}
 		} else {
-			// If no source arguement passed
-			srcIn, err := askInput("Source Path: ") // Getting source path from the user
+			// if arguement provided
+			arg0, err = checkSrc(args[0]) // Checks for a valid file source
 			if err != nil {
-				fmt.Printf("\n")
 				return err
 			}
+		}
 
-			// Validate source
-			src, err = checkSrc(srcIn[:len(srcIn)-1]) // NOTE: srcIn includes "\n" in the end
-			if err != nil {
-				fmt.Printf("\n")
-				return err
-			}
+		// Setting src to Absolete path of "arg0"
+		src, err = filepath.Abs(arg0)
+		if err != nil {
+			fmt.Print("\n")
+			return err
 		}
 
 		// Getting password from the user
@@ -62,15 +67,11 @@ var addCmd = &cobra.Command{
 			return err
 		}
 
-		// Extracting filename from the source
-		_, srcFn := path.Split(src) // Reading the filename from src
-		filename = srcFn            // Setting filename to srcFn
+		// Copying, Renaming & Replacing File
+		filename = src                                  // Setting filename to src (Cause have to map out the whole fs from "/" (absolute))
+		file := db.File{Title: src, Password: password} // New File struct
 
-		// New File struct
-		file := db.File{Title: filename, Password: password}
-
-		// Copying source file
-		newpath, err = file.CopyFile(src)
+		newpath, err = file.CopyFile(src) // Copying source file
 
 		if err != nil && err.Error() == "dup:err" {
 			// If filename already exist
@@ -93,8 +94,7 @@ var addCmd = &cobra.Command{
 		}
 
 		// Saving Password
-		_, npFile := path.Split(newpath)                                       // Getting new filename
-		pw := db.Password{Title: npFile, Password: password, FileName: npFile} // New Password struct
+		pw := db.Password{Title: src, Password: password, FileName: src} // New Password struct
 
 		// Writing Password
 		err = pw.Write()
@@ -103,7 +103,7 @@ var addCmd = &cobra.Command{
 		}
 
 		// Printing teh results
-		fmt.Print("\n")
+		fmt.Print("\nSuccessfully Added!\n\n")
 		fmt.Println("Source Location:", src)
 		fmt.Println("Copy Location:", newpath)
 

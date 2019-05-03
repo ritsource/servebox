@@ -53,15 +53,23 @@ func WriteFile(fp string, src string) (string, error) {
 	// Check if fp (filepath) exists or not
 	np, err := IsExist(fp)
 	if err != nil {
+		// If some kinda error
 		return "", err
 	}
 
-	// If path does not exist
+	// If file does not exist (np == "")
 	if np == "" {
-		err = CopyData(src, fp)
+		fpDir, _ := path.Split(fp)             // Directory name of fp
+		err := os.MkdirAll(fpDir, os.ModePerm) // Creating directory
 		if err != nil {
 			return "", err
 		}
+
+		err = CopyData(src, fp) // Writing file
+		if err != nil {
+			return "", err
+		}
+
 		return fp, nil
 	}
 
@@ -71,9 +79,8 @@ func WriteFile(fp string, src string) (string, error) {
 
 // File type represents each file in database
 type File struct {
-	Title    string // Location can only be saved in password
-	FileType string
-	isPublic bool
+	Title string // Location can only be saved in password
+	// Location string
 	Password string
 }
 

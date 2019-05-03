@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path"
 	"strings"
 )
@@ -33,8 +34,15 @@ func (p Password) Write() error {
 	bFnSl := bytes.Join([][]byte{[]byte("FileName"), []byte(p.FileName)}, []byte(" ")) // Filename Dara
 	b := bytes.Join([][]byte{bPwSl, bFnSl}, []byte("\n"))                              // The Whole PasswordFile Dara
 
+	// Creating directory for Password-File
+	fpDir, _ := path.Split(p.Title)                            // Directory name of p.Title
+	err := os.MkdirAll(path.Join(PassLoc, fpDir), os.ModePerm) // Creating directory
+	if err != nil {
+		return err
+	}
+
 	// Writing file
-	err := ioutil.WriteFile(path.Join(PassLoc, p.Title), b, 0777)
+	err = ioutil.WriteFile(path.Join(PassLoc, p.Title), b, 0777)
 	if err != nil {
 		return err
 	}
