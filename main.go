@@ -6,8 +6,8 @@ import (
 	"os"
 	"path"
 
+	"github.com/ritwik310/servebox/cmd"
 	db "github.com/ritwik310/servebox/database"
-	"github.com/ritwik310/servebox/server"
 )
 
 func init() {
@@ -20,6 +20,10 @@ func init() {
 }
 
 func main() {
+	cmd.Execute()
+}
+
+func createFile() {
 	f := db.File{
 		Title:    "myfile.txt",
 		Password: "mypassword0",
@@ -46,8 +50,6 @@ func main() {
 	}
 
 	writePassword(pw)
-
-	server.Start()
 }
 
 func testCopy(file db.File, src string) (string, error) {
