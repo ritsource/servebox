@@ -94,7 +94,7 @@ var addCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Println("filename", filename)
+		// fmt.Println("filename", filename)
 
 		// Saving Password
 		pw := db.Password{Title: filename, Password: password, FileName: filename} // New Password struct

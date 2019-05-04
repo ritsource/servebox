@@ -79,8 +79,7 @@ func WriteFile(fp string, src string) (string, error) {
 
 // File type represents each file in database
 type File struct {
-	Title string // Location can only be saved in password
-	// Location string
+	Title    string // Location can only be saved in password
 	Password string
 }
 

@@ -19,25 +19,29 @@ var lsCmd = &cobra.Command{
 	Short: "ls",
 	Long:  "ls",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		// Reading db.FileLoc tree
 		err := filepath.Walk(db.FileLoc, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
 
+			// Check if it's a file
 			if !info.IsDir() {
-				// relPath :=
-				pathSl := strings.Split(path, string(os.PathSeparator))[5:]
-				relPath := string(os.PathSeparator) + strings.Join(pathSl, string(os.PathSeparator))
-				fmt.Printf("%s", relPath)
+				var printMsg string
 
+				pathSl := strings.Split(path, string(os.PathSeparator))[5:]
+				relPath := string(os.PathSeparator) + strings.Join(pathSl, string(os.PathSeparator)) // relative path inside .servebox
+				printMsg = "File: " + relPath
+
+				// Reading password
 				pw, err := readPassword(relPath)
 				if err != nil {
 					return err
 				}
 
-				fmt.Printf("\t\t%s\n", pw)
-				// fmt.
-				// fmt.Printf("%+v\n", info.Name())
+				printMsg = printMsg + "\tPassword: " + pw
+
+				fmt.Println(printMsg)
 			}
 			return nil
 		})
@@ -46,6 +50,7 @@ var lsCmd = &cobra.Command{
 	},
 }
 
+// readPassword Password from Password-file
 func readPassword(relPath string) (string, error) {
 	// Reading file
 	b, err := ioutil.ReadFile(path.Join(db.PassLoc, relPath))

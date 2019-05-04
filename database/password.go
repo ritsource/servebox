@@ -3,7 +3,6 @@ package database
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
@@ -65,7 +64,7 @@ func (p *Password) Read() error {
 
 	// Check if p.Password is Not Correct
 	if !bytes.Equal(bPwStr[idxPwSp+1:], []byte(p.Password)) {
-		fmt.Println("Wrong Password!")
+		// fmt.Println("Wrong Password!")
 		return errors.New("wrong:password")
 	}
 
