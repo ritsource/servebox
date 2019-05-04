@@ -89,7 +89,7 @@ type File struct {
 // GetFile serves the file if authenticated, returns http.FileSystem type
 func (f File) GetFile() (string, error) {
 	pw := Password{Title: f.Title, Password: f.Password} // Password Struct
-	err := pw.Read()                                     // Reading FileName from Password
+	err := pw.GetFileName()                             // Reading FileName from Password
 
 	// If No Error
 	if err == nil {

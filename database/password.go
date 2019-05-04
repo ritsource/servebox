@@ -16,6 +16,26 @@ type Password struct {
 	FileName string
 }
 
+// GetFileName reads password files, and populates the Password.FileName value
+func (p *Password) GetFileName() error {
+	// New variable to store Query Secrets
+	p2 := Password{Title: p.Title}
+	err := p2.Read()
+	if err != nil {
+		return err
+	}
+
+	// If Query secret (Password) matches given Password
+	if p2.Password != p.Password {
+		return errors.New("wrong:password")
+	}
+
+	// Change FileName in p *Password
+	p.FileName = p2.FileName
+
+	return nil
+}
+
 // Write writes a file that contains Password.Password and Password.FileName
 func (p Password) Write() error {
 	// Checking if password is valid or not, check if contains "\n"
@@ -49,8 +69,13 @@ func (p Password) Write() error {
 	return nil
 }
 
-// Read reads password files, and populates the Password.FileName value
+// Read populates all the values of password given it's Title
 func (p *Password) Read() error {
+	// Check if Title Provided
+	if p.Title == "" {
+		return errors.New("p.Title field required in Password")
+	}
+
 	// Reading file
 	b, err := ioutil.ReadFile(path.Join(PassLoc, p.Title))
 	if err != nil {
@@ -58,24 +83,33 @@ func (p *Password) Read() error {
 	}
 
 	// Extracting Password-File's data
-	arr0 := bytes.Split(b, []byte("\n"))          // arr0 - array of each-line-data in the file
-	bPwStr := arr0[0]                             // Password data (First line in the file)
+	arr := bytes.Split(b, []byte("\n")) // arr - array of each-line-data in the file
+
+	bPwStr := arr[0]                              // Password data (First line in the file)
 	idxPwSp := bytes.IndexByte(bPwStr, byte(' ')) // Index of First " " - whitespace in First line (idxPwSp)
+	p.Password = string(bPwStr[idxPwSp+1:])       // Setting pw.Password
 
-	// Check if p.Password is Not Correct
-	if !bytes.Equal(bPwStr[idxPwSp+1:], []byte(p.Password)) {
-		// fmt.Println("Wrong Password!")
-		return errors.New("wrong:password")
-	}
-
-	// If Password is Correct
-	bFnStr := arr0[1]                             // Filename data (Second line in the file)
+	bFnStr := arr[1]                              // Filename data (Second line in the file)
 	idxFnSp := bytes.IndexByte(bFnStr, byte(' ')) // Index of First " " - whitespace in Second line (bFnStr)
+	p.FileName = string(bFnStr[idxFnSp+1:])       // Setting pw.Filename
 
-	// Change FileName in p *Password
-	p.FileName = string(bFnStr[idxFnSp+1:])
-
-	return nil
+	return err
 }
 
-// func CreatePassword
+// Remove removes a password file
+func (p Password) Remove() error {
+	// Check if Related exist
+	fp, err := IsExist(path.Join(FileLoc, p.FileName))
+	if err != nil {
+		return err
+	}
+
+	// if corresponding is already deleted or not
+	if fp != "" {
+		return errors.New("password cannot be deleted, cause corresponding file exists")
+	}
+
+	// Removing file
+	err = os.Remove(path.Join(PassLoc, p.Title))
+	return err
+}

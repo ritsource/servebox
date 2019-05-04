@@ -21,6 +21,9 @@ func init() {
 
 func main() {
 	cmd.Execute()
+
+	// writePassword()
+	// readPassword()
 }
 
 func createFile() {
@@ -42,14 +45,14 @@ func createFile() {
 	fmt.Println("npDir", npDir)
 	fmt.Println("npFile", npFile)
 
-	pw := db.Password{
-		// Title:    "myfile.txt",
-		Title:    npFile,
-		Password: "mypassword0",
-		FileName: npFile,
-	}
+	// pw := db.Password{
+	// 	// Title:    "myfile.txt",
+	// 	Title:    npFile,
+	// 	Password: "mypassword0",
+	// 	FileName: npFile,
+	// }
 
-	writePassword(pw)
+	// writePassword()
 }
 
 func testCopy(file db.File, src string) (string, error) {
@@ -66,7 +69,13 @@ func testCopy(file db.File, src string) (string, error) {
 	return "", err
 }
 
-func writePassword(pw db.Password) {
+func writePassword() {
+	pw := db.Password{
+		Title:    "index3.txt",
+		Password: "mypassword1",
+		FileName: "index3.txt",
+	}
+
 	err := pw.Write()
 	if err != nil {
 		log.Fatal(err)
@@ -80,7 +89,7 @@ func readPassword() {
 		// FileName: "index3.txt",
 	}
 
-	err := pw.Read()
+	err := pw.GetFileName()
 	if err == nil {
 		fmt.Printf("%+v\n", pw)
 		return

@@ -58,7 +58,9 @@ func PopSrc() {
 	HandleError1(err)
 
 	files := map[string]string{
-		"test_doc.txt": "test_doc",
+		"test_doc.txt":     "test_doc",
+		"get_test_doc.txt": "get_test_doc",
+		"test_pass.txt":    "test_pass", // For password test
 	}
 
 	for k, v := range files {
@@ -68,20 +70,27 @@ func PopSrc() {
 }
 
 func TestGetFile(t *testing.T) {
-	filename := "get_test_doc.txt"              // Name of file (Title)
-	password := "mypassword1"                   // Password for File
-	src := path.Join(SourceDir, "test_doc.txt") // Source File Path
+	filename := "get_test_doc.txt"                  // Name of file (Title)
+	password := "mypassword1"                       // Password for File
+	src := path.Join(SourceDir, "get_test_doc.txt") // Source File Path
 
 	f := db.File{Title: filename} // File Struct, containing Title and password
 
 	// Copying File from source
-	np, _ := copyFile(t, f, src) // copyFile function takes care of error
+	np, err := CopyFile(t, f, src) // copyFile function takes care of error
+	if err != nil {
+		t.Error(err)
+	}
 
-	_, npFile := path.Split(np)                                            // Geting directory-name and file-name from np (new filepath)
-	pw := db.Password{Title: npFile, Password: password, FileName: npFile} // New Password Struct
+	npFile := filepath.Base(np) // Geting directory-name and file-name from np (new filepath)
+	pw := db.Password{
+		Title:    npFile,
+		Password: password,
+		FileName: npFile,
+	} // New Password Struct
 
 	// Writing the Password
-	err := pw.Write()
+	err = pw.Write()
 	if err != nil {
 		t.Error(err)
 	}
@@ -108,7 +117,7 @@ func TestCopyAndRemove(t *testing.T) {
 	}
 
 	// NOTE: Always run copyFile before copyFileDup
-	copyFile(t, f, src)    // Copy file
+	CopyFile(t, f, src)    // Copy file
 	copyFileDup(t, f, src) // Copy same file again
 	copyFileDup(t, f, src) // Copy again, but this will be deleted
 	copyFileRename(t, f, src, "test_doc.new.txt")
@@ -124,7 +133,7 @@ func TestCopyAndRemove(t *testing.T) {
 
 	// Testing File Deletion
 	f2bDeleted := db.File{Title: "test_doc.copy.copy.txt", Password: "mypassword1"} // File to be deleted
-	removeFile(t, f2bDeleted)                                                       // Deleting f2bDeleted ("test_doc.copy.copy.txt")
+	RemoveFile(t, f2bDeleted)                                                       // Deleting f2bDeleted ("test_doc.copy.copy.txt")
 
 	// Check if deleted or not
 	_, err := ioutil.ReadFile(path.Join(db.FileLoc, f2bDeleted.Title))
@@ -133,7 +142,8 @@ func TestCopyAndRemove(t *testing.T) {
 	}
 }
 
-func copyFile(t *testing.T, file db.File, src string) (string, error) {
+// CopyFile copies a file from test src to test servebox-dir
+func CopyFile(t *testing.T, file db.File, src string) (string, error) {
 	np, err := file.CopyFile(src)
 	if err != nil && err.Error() != "dup:err" {
 		t.Error("Error:", err)
@@ -156,7 +166,8 @@ func copyFileRename(t *testing.T, file db.File, src string, newname string) {
 	}
 }
 
-func removeFile(t *testing.T, file db.File) {
+// RemoveFile removes a file given f.Title
+func RemoveFile(t *testing.T, file db.File) {
 	err := file.RemoveFile()
 	if err != nil {
 		t.Error("Error:", err)

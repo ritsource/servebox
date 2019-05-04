@@ -18,7 +18,8 @@ const html = `
   <title>ServeBox</title>
 </head>
 <body>
-  <form>
+	<form>
+		<h3>ServeBox</h3>
     <label>File:</label>
     <input id="file-input" name="file"/>
     <br/>
@@ -27,19 +28,27 @@ const html = `
     <br/>
 
     <button type="button" id="submit-button" >Submit</button>
+    <button type="button" id="download-button" >Download</button>
   </form>
 
   <script>
-    document.getElementById('submit-button').onclick = function() {
-      const file = document.getElementById('file-input').value
+		document.getElementById('submit-button').onclick = function() {
+			const file = document.getElementById('file-input').value
+			const password = document.getElementById('password-input').value
+
+			window.location.href = '/read?file='+encodeURIComponent(file)+"&password="+password
+			return false;
+		};
+
+		document.getElementById('download-button').onclick = function() {
+			const file = document.getElementById('file-input').value
 			const password = document.getElementById('password-input').value
 			
-			console.log("file", file);
-			console.log("password", password);
-
-      window.location.href = '/read?file='+encodeURIComponent(file)+"&password="+password
-      return false;
-    };
+			var win = window.open('/download?file='+encodeURIComponent(file)+"&password="+password, '_blank');
+			win.focus();
+			
+			return false;
+		};
 
   </script>
 </body>
