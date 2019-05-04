@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -150,11 +151,12 @@ func handleReplace(src string, newpath *string, file db.File) error {
 }
 
 // handleDuplicate takes care of file renaming on duplicate copy
-func handleDuplicate(askforauto bool, src string, filename *string, newpath *string, file *db.File) error {
-	fmt.Printf("++ CONFLICT ++: filename \"" + *filename + "\" already exist.\n")
+func handleDuplicate(askforauto bool, src string, filenameP *string, newpathP *string, fileP *db.File) error {
+	fmt.Printf("++ CONFLICT ++: filename \"" + *filenameP + "\" already exist.\n")
 
 	var autoRn string // Want-Auto-Rename input
 	var err error
+	fnDir, _ := path.Split(src) // fnDir is the directory that source is inside
 
 	// Only want to ask for auto rename, indeally for the first time only
 	if askforauto {
@@ -169,10 +171,12 @@ func handleDuplicate(askforauto bool, src string, filename *string, newpath *str
 
 	if askforauto && strings.ToLower(autoRn) != "r" {
 		// When user askes for auto renaming
-		*newpath, err = file.CopyFileDup(src)
+		*newpathP, err = fileP.CopyFileDup(src)
 		if err != nil {
 			return err
 		}
+
+		*filenameP = path.Join(fnDir, filepath.Base(*newpathP))
 
 	} else {
 		// If user selects manual renaming
@@ -182,15 +186,13 @@ func handleDuplicate(askforauto bool, src string, filename *string, newpath *str
 			return err
 		}
 
-		fmt.Println("fnIn[:len(fnIn)-1]", fnIn[:len(fnIn)-1])
+		*filenameP = path.Join(fnDir, fnIn[:len(fnIn)-1])
 
-		*filename = fnIn[:len(fnIn)-1]
-
-		*newpath, err = file.CopyFileRename(src, *filename)
+		*newpathP, err = fileP.CopyFileRename(src, *filenameP)
 
 		if err != nil && err.Error() == "dup:err" {
 			// If manual name is also duplicate, run again (this time dont askforauto)
-			return handleDuplicate(false, src, filename, newpath, file)
+			return handleDuplicate(false, src, filenameP, newpathP, fileP)
 		} else if err != nil {
 			fmt.Printf("\n")
 			return err
