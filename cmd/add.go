@@ -93,8 +93,10 @@ var addCmd = &cobra.Command{
 			return err
 		}
 
+		fmt.Println("filename", filename)
+
 		// Saving Password
-		pw := db.Password{Title: src, Password: password, FileName: src} // New Password struct
+		pw := db.Password{Title: filename, Password: password, FileName: filename} // New Password struct
 
 		// Writing Password
 		err = pw.Write()
@@ -179,6 +181,8 @@ func handleDuplicate(askforauto bool, src string, filename *string, newpath *str
 			fmt.Printf("\n")
 			return err
 		}
+
+		fmt.Println("fnIn[:len(fnIn)-1]", fnIn[:len(fnIn)-1])
 
 		*filename = fnIn[:len(fnIn)-1]
 
