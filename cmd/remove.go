@@ -38,7 +38,7 @@ var removeCmd = &cobra.Command{
 			return err
 		}
 
-		// // Remove after deleting file
+		// Remove after deleting file
 		err = pw.Remove()
 		fmt.Println("RemoveErr")
 		if err != nil {
