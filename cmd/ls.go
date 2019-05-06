@@ -13,8 +13,7 @@ import (
 // lsCmd represents the ls command
 var lsCmd = &cobra.Command{
 	Use:   "ls",
-	Short: "ls",
-	Long:  "ls",
+	Short: "Lists out all the files and corresponding password",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Reading db.FileLoc tree
 		err := filepath.Walk(db.FileLoc, func(path string, info os.FileInfo, err error) error {

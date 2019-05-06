@@ -70,9 +70,6 @@ func readFile(w http.ResponseWriter, r *http.Request) ([]byte, error) {
 		return []byte{}, err
 	}
 
-	fmt.Println(fn)
-	fmt.Println(pw)
-
 	// Checking if filename and Password exist in th equery string
 	if fn == "" || pw == "" {
 		return []byte{}, errors.New("Both Filename and Password required in the query string, /read?file=example.txt&passowrd=examplepass")

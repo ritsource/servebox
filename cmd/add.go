@@ -15,8 +15,14 @@ import (
 // addCmd represents the add command
 var addCmd = &cobra.Command{
 	Use:   "add",
-	Short: "A",
-	Long:  `A`,
+	Short: "Adds a file to the staging area, ready to be shared publically",
+	Long: `You can provide file source in the commarnd as the first arguement
+Example, "servebox add ../test/example.txt"
+
+Add command ask you to provide a "password", which is ironically meaningless because
+the current version of servebox doesn't support TLS. More about that here
+https://github.com/ritwik310/servebox/blob/master/README.md
+	`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		var replace bool     // File to be replaced or not (If already there)
 		var arg0 string      // First arguement, path to the source file

@@ -10,8 +10,7 @@ import (
 // removeCmd represents the remove command
 var removeCmd = &cobra.Command{
 	Use:   "remove",
-	Short: "r",
-	Long:  `a`,
+	Short: "Removes a file from the staging area",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		var filetitle string
 		var password string

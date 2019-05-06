@@ -14,7 +14,7 @@ import (
 // startCmd represents the start command
 var startCmd = &cobra.Command{
 	Use:   "start",
-	Short: "Starts the server",
+	Short: "Starts a server on your local machine, that serves the files",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// fmt.Println("start called")
 		var customport string

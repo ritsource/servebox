@@ -3,20 +3,14 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/ritwik310/servebox/database"
+	db "github.com/ritwik310/servebox/database"
 	"github.com/spf13/cobra"
 )
 
 // changePasswordCmd represents the changePassword command
 var changePasswordCmd = &cobra.Command{
 	Use:   "change-password",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Changes the password of a file",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		var newpassword string // Password input
 		var filetitle string   // Filename (File's Title)
@@ -33,14 +27,14 @@ to quickly create a Cobra application.`,
 		fmt.Scanln(&newpassword) // Getting New Password path from the user
 
 		// Reading password
-		pw := database.Password{Title: filetitle}
+		pw := db.Password{Title: filetitle}
 		err := pw.Read() // Read passowrd just to check if it exist or not
 		if err != nil {
 			return err
 		}
 
 		// New Password struct
-		newpw := database.Password{Title: pw.Title, Password: newpassword, FileName: pw.FileName}
+		newpw := db.Password{Title: pw.Title, Password: newpassword, FileName: pw.FileName}
 
 		// Writing new password, it will replace the previous one
 		err = newpw.Write()
