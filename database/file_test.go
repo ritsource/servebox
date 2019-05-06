@@ -132,13 +132,17 @@ func TestCopyAndRemove(t *testing.T) {
 	checkCreatedFiles(t, fcmap) // Checking File Content
 
 	// Testing File Deletion
-	f2bDeleted := db.File{Title: "test_doc.copy.copy.txt", Password: "mypassword1"} // File to be deleted
-	RemoveFile(t, f2bDeleted)                                                       // Deleting f2bDeleted ("test_doc.copy.copy.txt")
+	f2bDeleted := db.File{Title: "test_doc.copy.copy.txt", Password: "mypassword1"}                                          // File to be deleted
+	pw2bDeleted := db.Password{Title: "test_doc.copy.copy.txt", Password: "mypassword1", FileName: "test_doc.copy.copy.txt"} // Password to be deleted
+	// Buf first need to create the password
+	WritePassword(t, pw2bDeleted)
+
+	RemoveFile(t, f2bDeleted) // Deleting f2bDeleted ("test_doc.copy.copy.txt")
 
 	// Check if deleted or not
 	_, err := ioutil.ReadFile(path.Join(db.FileLoc, f2bDeleted.Title))
 	if err == nil {
-		t.Error("Error:", "Unable to Delete file")
+		t.Error("Error:", "Unable to Delete file", path.Join(db.FileLoc, f2bDeleted.Title))
 	}
 }
 

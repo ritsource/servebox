@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
 	"os"
@@ -19,12 +18,12 @@ var addCmd = &cobra.Command{
 	Short: "A",
 	Long:  `A`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		var replace bool    // File to be replaced or not (If already there)
-		var arg0 string     // First arguement, path to the source file
-		var src string      // Path to the source file
-		var password string // Password input
-		var filename string // Filename (File's Title)
-		var newpath string  // Path of the copied file (np)
+		var replace bool     // File to be replaced or not (If already there)
+		var arg0 string      // First arguement, path to the source file
+		var src string       // Path to the source file
+		var password string  // Password input
+		var filetitle string // Filename (File's Title)
+		var newpath string   // Path of the copied file (np)
 		var err error
 
 		// Reading Flags
@@ -35,24 +34,17 @@ var addCmd = &cobra.Command{
 
 		if len(args) == 0 {
 			// if arguement not provided, ask in prompt
-			arg0In, err := askInput("Source Path: ") // Getting source path from the user
-			if err != nil {
-				fmt.Printf("\n")
-				return err
-			}
-
-			// Checks for a valid file source
-			arg0, err = checkSrc(arg0In[:len(arg0In)-1]) // NOTE: srcIn includes "\n" in the end
-			if err != nil {
-				fmt.Print("\n")
-				return err
-			}
+			fmt.Printf("Source Path: ")
+			fmt.Scanln(&arg0) // Getting source path from the user
 		} else {
-			// if arguement provided
-			arg0, err = checkSrc(args[0]) // Checks for a valid file source
-			if err != nil {
-				return err
-			}
+			arg0 = args[0] // if arguement provided
+		}
+
+		// Checks for a valid file source
+		arg0, err = checkSrc(arg0)
+		if err != nil {
+			fmt.Print("\n")
+			return err
 		}
 
 		// Setting src to Absolete path of "arg0"
@@ -69,13 +61,13 @@ var addCmd = &cobra.Command{
 		}
 
 		// Copying, Renaming & Replacing File
-		filename = src                                  // Setting filename to src (Cause have to map out the whole fs from "/" (absolute))
+		filetitle = src                                 // Setting filetitle to src (Cause have to map out the whole fs from "/" (absolute))
 		file := db.File{Title: src, Password: password} // New File struct
 
 		newpath, err = file.CopyFile(src) // Copying source file
 
 		if err != nil && err.Error() == "dup:err" {
-			// If filename already exist
+			// If filetitle already exist
 			if replace {
 				// if user requested for existing file replacement (-r)
 				err = handleReplace(src, &newpath, file) // handleReplace handles file replacing
@@ -84,7 +76,7 @@ var addCmd = &cobra.Command{
 				}
 			} else {
 				// If user doesn't wanna replace the previous one, create duplicate
-				err = handleDuplicate(true, src, &filename, &newpath, &file) // handleDuplicate handles renaming
+				err = handleDuplicate(true, src, &filetitle, &newpath, &file) // handleDuplicate handles renaming
 				if err != nil {
 					return err
 				}
@@ -94,10 +86,8 @@ var addCmd = &cobra.Command{
 			return err
 		}
 
-		// fmt.Println("filename", filename)
-
 		// Saving Password
-		pw := db.Password{Title: filename, Password: password, FileName: filename} // New Password struct
+		pw := db.Password{Title: filetitle, Password: password, FileName: filetitle} // New Password struct
 
 		// Writing Password
 		err = pw.Write()
@@ -116,13 +106,10 @@ var addCmd = &cobra.Command{
 
 // handlePasswordIn handles password input and validation (!= "")
 func handlePasswordIn(label string) (string, error) {
-	pwIn, err := askInput(label) // Getting input
-	if err != nil {
-		fmt.Printf("\n")
-		return "", err
-	}
+	var passw string
 
-	passw := pwIn[:len(pwIn)-1] // excluding "\n" from the end
+	fmt.Print(label)
+	fmt.Scanln(&passw) // Getting input
 
 	if passw == "" {
 		// If input == "", ask again
@@ -151,8 +138,8 @@ func handleReplace(src string, newpath *string, file db.File) error {
 }
 
 // handleDuplicate takes care of file renaming on duplicate copy
-func handleDuplicate(askforauto bool, src string, filenameP *string, newpathP *string, fileP *db.File) error {
-	fmt.Printf("++ CONFLICT ++: filename \"" + *filenameP + "\" already exist.\n")
+func handleDuplicate(askforauto bool, src string, filetitleP *string, newpathP *string, fileP *db.File) error {
+	fmt.Printf("++ CONFLICT ++: filename \"" + *filetitleP + "\" already exist.\n")
 
 	var autoRn string // Want-Auto-Rename input
 	var err error
@@ -160,13 +147,8 @@ func handleDuplicate(askforauto bool, src string, filenameP *string, newpathP *s
 
 	// Only want to ask for auto rename, indeally for the first time only
 	if askforauto {
-		rnIn, err := askInput("Rename or Auto-Rename (r/A): ")
-		if err != nil {
-			fmt.Printf("\n")
-			return err
-		}
-
-		autoRn = rnIn[:len(rnIn)-1]
+		fmt.Print("Rename or Auto-Rename (r/A): ")
+		fmt.Scanln(&autoRn)
 	}
 
 	if askforauto && strings.ToLower(autoRn) != "r" {
@@ -176,23 +158,21 @@ func handleDuplicate(askforauto bool, src string, filenameP *string, newpathP *s
 			return err
 		}
 
-		*filenameP = path.Join(fnDir, filepath.Base(*newpathP))
+		*filetitleP = path.Join(fnDir, filepath.Base(*newpathP))
 
 	} else {
-		// If user selects manual renaming
-		fnIn, err := askInput("Enter Filename: ") // Password for File
-		if err != nil {
-			fmt.Printf("\n")
-			return err
-		}
+		var fnIn string // filetitle input
 
-		*filenameP = path.Join(fnDir, fnIn[:len(fnIn)-1])
+		fmt.Print("Enter Filename: ")
+		fmt.Scanln(&fnIn) // Getting fnIn
 
-		*newpathP, err = fileP.CopyFileRename(src, *filenameP)
+		*filetitleP = path.Join(fnDir, fnIn)
+
+		*newpathP, err = fileP.CopyFileRename(src, *filetitleP)
 
 		if err != nil && err.Error() == "dup:err" {
 			// If manual name is also duplicate, run again (this time dont askforauto)
-			return handleDuplicate(false, src, filenameP, newpathP, fileP)
+			return handleDuplicate(false, src, filetitleP, newpathP, fileP)
 		} else if err != nil {
 			fmt.Printf("\n")
 			return err
@@ -201,13 +181,6 @@ func handleDuplicate(askforauto bool, src string, filenameP *string, newpathP *s
 	}
 
 	return nil
-}
-
-// askInput reads user input
-func askInput(label string) (string, error) {
-	reader := bufio.NewReader(os.Stdin) // New Reader
-	fmt.Print(label)
-	return reader.ReadString('\n') // Reading string until '\n'
 }
 
 // checkSrc checks if a file is valid or not, given its path

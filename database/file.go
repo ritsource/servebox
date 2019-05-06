@@ -89,7 +89,7 @@ type File struct {
 // GetFile serves the file if authenticated, returns http.FileSystem type
 func (f File) GetFile() (string, error) {
 	pw := Password{Title: f.Title, Password: f.Password} // Password Struct
-	err := pw.GetFileName()                             // Reading FileName from Password
+	err := pw.GetFileName()                              // Reading FileName from Password
 
 	// If No Error
 	if err == nil {
@@ -166,11 +166,17 @@ func (f File) CopyFileRename(src string, nTit string) (string, error) {
 
 // RemoveFile deletes a file
 func (f File) RemoveFile() error {
+	pw := Password{Title: f.Title, Password: f.Password} // Password Struct
+	err := pw.GetFileName()                              // Reading FileName from Password
+	if err != nil {
+		return err
+	}
+
 	// filepath
-	fp := path.Join(FileLoc, f.Title)
+	fp := path.Join(FileLoc, pw.FileName)
 
 	// Removing file
-	err := os.Remove(fp)
+	err = os.Remove(fp)
 	if err != nil {
 		return err
 	}

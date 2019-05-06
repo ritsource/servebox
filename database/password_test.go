@@ -13,7 +13,7 @@ func TestPasswordWriteReadAndRemove(t *testing.T) {
 	password := "mypassword1"                    // Password for File
 	src := path.Join(SourceDir, "test_pass.txt") // Source File Path
 
-	f := db.File{Title: filename} // File Struct, containing Title and password
+	f := db.File{Title: filename, Password: password} // File Struct, containing Title and password
 
 	// Copying File from source
 	np, err := CopyFile(t, f, src) // copyFile function takes care of error
@@ -29,7 +29,7 @@ func TestPasswordWriteReadAndRemove(t *testing.T) {
 	} // New Password Struct
 
 	// Writing File
-	writePassword(t, pw) // Password File Write Test
+	WritePassword(t, pw) // Password File Write Test
 
 	// Reading File
 	pwR := db.Password(pw) // New Password sStruct for Read test
@@ -44,12 +44,13 @@ func TestPasswordWriteReadAndRemove(t *testing.T) {
 	pwW := db.Password(pw)                    // Password Struct for Wrong Password Check
 	pwW.Password = pwW.Password + "blah_blah" // Rewrite password
 
-	readPasswordWrong(t, pwW) // Password File Wrong Password Read Test
+	readPasswordWrong(t, pwW) // Password File Wrong Password Read Test, Without deleting file first
 
 	removePassword(t, f, pw) // Tests pw.Remove method
 }
 
-func writePassword(t *testing.T, pw db.Password) {
+// WritePassword writes a password file
+func WritePassword(t *testing.T, pw db.Password) {
 	err := pw.Write()
 	if err != nil {
 		t.Error(err)
