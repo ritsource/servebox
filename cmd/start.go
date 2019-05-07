@@ -34,7 +34,7 @@ var startCmd = &cobra.Command{
 		print("\033[H\033[2J")
 
 		// WARNING Message
-		color.Red("WARNING!, your connection is not private. To learn more, https://github.com/ritwik310/servebox/blob/master/README.md")
+		color.Red("WARNING!, your connection is not private. To learn more, https://github.com/ritwik310/servebox#how-it-works")
 
 		// Printing URL
 		locIP := GetOutboundIP()
