@@ -1,9 +1,10 @@
 # ServeBox
 
-
 ![GitHub](https://img.shields.io/github/license/ritwik310/servebox.svg)
 ![GitHub tag (latest SemVer)](https://img.shields.io/github/tag/ritwik310/servebox.svg)
 ![Travis (.com)](https://img.shields.io/travis/com/ritwik310/servebox.svg)
+
+> NOTE: Eventually, I realized that your local machine's IP is private, so this whole project is just a joke.
 
 
 **ServeBox** serves files quickly on the web directly from your local machine, what you can access via your IP-address from anywhere. Here's a quick demo of serving files,
